@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Site Visit Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#F0EEE6; --surface:#FAF9F5; --surface-2:#F4F2EC; --ink:#141413; --ink-2:#5E5D59; --ink-3:#87867F;
+  --line:#DEDACF; --line-2:#E8E5DC; --pine:#D97757; --pine-ink:#FFFFFF; --pine-soft:#F5E3DA;
+  --brass:#D97757; --hot:#B84A3E; --hot-soft:#F4DFDA; --warm:#B07A35; --warm-soft:#F2E7D5;
+  --cold:#5A87B8; --cold-soft:#E1E9F2; --ok:#788C5D; --booked:#788C5D; --booked-soft:#E6EADC; --focus:#D97757;
+  --r-s:6px; --r-m:10px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1F1E1D; --surface:#262624; --surface-2:#2C2B28; --ink:#F0EEE6; --ink-2:#BFBDB4; --ink-3:#8E8C84;
+    --line:#3A3935; --line-2:#302F2C; --pine:#D97757; --pine-ink:#1F1E1D; --pine-soft:#3A2A23;
+    --brass:#D97757; --hot:#E88B7E; --hot-soft:#3B2521; --warm:#D9A865; --warm-soft:#362D20;
+    --cold:#8DB4DE; --cold-soft:#232C36; --ok:#A3B585; --booked:#A3B585; --booked-soft:#2C3226;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1F1E1D; --surface:#262624; --surface-2:#2C2B28; --ink:#F0EEE6; --ink-2:#BFBDB4; --ink-3:#8E8C84;
+    --line:#3A3935; --line-2:#302F2C; --pine:#D97757; --pine-ink:#1F1E1D; --pine-soft:#3A2A23;
+    --brass:#D97757; --hot:#E88B7E; --hot-soft:#3B2521; --warm:#D9A865; --warm-soft:#362D20;
+    --cold:#8DB4DE; --cold-soft:#232C36; --ok:#A3B585; --booked:#A3B585; --booked-soft:#2C3226;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:1400px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;margin-right:auto;min-width:0}
+.brand h1{margin:0;font-family:"Source Serif 4",Georgia,serif;font-size:22px;font-weight:500;letter-spacing:-.01em}
+.brand small{color:var(--ink-3);font-size:13px}
+.live{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.live.on i{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 22%,transparent)}
+.live.off i{background:var(--hot)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  padding:9px 14px;border-radius:var(--r-s);cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--pine);border-color:var(--pine);color:var(--pine-ink);border-radius:8px}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--ink-2)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--line)}
+.btn.danger{color:var(--hot);background:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Mobile tabs */
+.mtabs{display:none;max-width:1400px;margin:0 auto;padding:0 20px 10px;gap:6px}
+.mtabs button{flex:1;border:1px solid var(--line);background:var(--surface);padding:9px;border-radius:var(--r-s);font-weight:600;cursor:pointer}
+.mtabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.banner{max-width:1400px;margin:12px auto 0;padding:0 20px}
+.banner div{background:var(--warm-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warm) 40%,transparent);padding:10px 14px;border-radius:var(--r-s);font-size:14px}
+.banner:empty{display:none}
+
+/* Layout */
+.wrap{max-width:1400px;margin:0 auto;padding:18px 20px 60px;display:grid;grid-template-columns:minmax(360px,440px) 1fr;gap:22px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m)}
+#formPanel{position:sticky;top:84px;max-height:calc(100vh - 100px);overflow:auto}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line-2);
+  position:sticky;top:0;background:var(--surface);z-index:2;border-radius:var(--r-m) var(--r-m) 0 0}
+.panel-head h2{margin:0;font-family:"Source Serif 4",Georgia,serif;font-size:19px;font-weight:500}
+.panel-head p{margin:2px 0 0;color:var(--ink-3);font-size:13px}
+
+/* Form */
+form{padding:4px 18px 18px}
+fieldset{border:0;margin:0;padding:16px 0 4px;border-top:1px solid var(--line-2)}
+fieldset:first-of-type{border-top:0}
+legend{font-family:"Source Serif 4",Georgia,serif;font-weight:600;font-size:16px;padding:0;margin-bottom:10px;color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.full{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f > span{font-size:13px;color:var(--ink-2);font-weight:500}
+.f > span b{color:var(--hot);font-weight:600}
+input[type=text],input[type=tel],input[type=email],input[type=date],input[type=number],select,textarea{
+  width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-s);padding:9px 11px;min-height:40px}
+textarea{min-height:74px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pine);background:var(--surface);box-shadow:0 0 0 3px var(--pine-soft)}
+.hint{font-size:12.5px;color:var(--ink-3)}
+.dup{margin-top:6px;font-size:13px;background:var(--cold-soft);border-radius:var(--r-s);padding:8px 10px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.dup button{border:0;background:none;color:var(--cold);font-weight:700;cursor:pointer;padding:0}
+
+/* Chips / segmented */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{position:relative}
+.chips input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.chips span{display:inline-block;border:1px solid var(--line);background:var(--surface-2);padding:6px 11px;border-radius:999px;font-size:13.5px;cursor:pointer;user-select:none}
+.chips input:checked + span{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chips input:focus-visible + span{outline:2px solid var(--focus);outline-offset:2px}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden;background:var(--surface-2)}
+.seg label{flex:1;position:relative}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;text-align:center;padding:8px 6px;font-size:13.5px;cursor:pointer;border-left:1px solid var(--line)}
+.seg label:first-child span{border-left:0}
+.seg input:checked + span{background:var(--ink);color:var(--bg);font-weight:600}
+.seg input:focus-visible + span{outline:2px solid var(--focus);outline-offset:-2px}
+
+/* Temperature picker: the one loud element */
+.temp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.temp label{position:relative}
+.temp input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.temp span{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1.5px solid var(--line);border-radius:var(--r-m);padding:10px 12px;cursor:pointer;background:var(--surface-2)}
+.temp span strong{font-size:16px}
+.temp span em{font-style:normal;font-size:12px;color:var(--ink-3)}
+.temp .t-hot input:checked + span{border-color:var(--hot);background:var(--hot-soft)}
+.temp .t-hot strong{color:var(--hot)}
+.temp .t-warm input:checked + span{border-color:var(--warm);background:var(--warm-soft)}
+.temp .t-warm strong{color:var(--warm)}
+.temp .t-cold input:checked + span{border-color:var(--cold);background:var(--cold-soft)}
+.temp .t-cold strong{color:var(--cold)}
+.temp input:focus-visible + span{outline:2px solid var(--focus);outline-offset:2px}
+
+.score{display:flex;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--r-m);padding:12px 14px;margin-bottom:10px}
+.score .n{font-family:"Source Serif 4",Georgia,serif;font-size:32px;font-weight:500;line-height:1;min-width:52px;letter-spacing:-.02em}
+.score .bar{flex:1;height:8px;border-radius:99px;background:var(--line-2);overflow:hidden}
+.score .bar i{display:block;height:100%;width:0;background:var(--brass);transition:width .35s ease}
+.score .lab{font-size:12.5px;color:var(--ink-3);margin-top:6px}
+.auto-note{font-size:12.5px;color:var(--ink-3);margin-top:6px}
+.auto-note button{border:0;background:none;color:var(--pine);font-weight:600;cursor:pointer;padding:0}
+
+.form-actions{display:flex;gap:8px;padding-top:16px;position:sticky;bottom:0;background:var(--surface);padding-bottom:4px;flex-wrap:wrap}
+.form-actions .btn.primary{flex:1;padding:12px}
+
+/* Notes log */
+.log{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.log .item{border-left:3px solid var(--line);padding:2px 0 2px 10px}
+.log .item small{display:block;color:var(--ink-3);font-size:12px}
+.log .empty{color:var(--ink-3);font-size:13px}
+.note-add{display:flex;gap:8px}
+.note-add input{flex:1}
+.meta{font-size:12.5px;color:var(--ink-3);margin-top:12px}
+
+/* Records */
+.rec-head{padding:14px 16px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--line-2)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;font-size:13.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.filters button b{font-weight:700}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.filters .dot{width:8px;height:8px;border-radius:50%}
+.tools{display:grid;grid-template-columns:1fr auto;gap:8px}
+.list{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:6px minmax(170px,1.4fr) minmax(150px,1.2fr) minmax(110px,.8fr) minmax(120px,.9fr) 116px;gap:14px;align-items:center;
+  padding:12px 16px 12px 0;border-bottom:1px solid var(--line-2);cursor:pointer;background:var(--surface)}
+.row:hover{background:var(--surface-2)}
+.row.sel{background:var(--pine-soft)}
+.row .edge{align-self:stretch;border-radius:0 3px 3px 0}
+.row .who strong{display:block;font-weight:600}
+.row .who a{color:var(--ink-2);text-decoration:none;font-size:13.5px}
+.row .who a:hover{color:var(--pine);text-decoration:underline}
+.row .c2{font-size:13.5px;color:var(--ink-2)}
+.row .c2 strong{display:block;color:var(--ink);font-weight:500;font-size:14px}
+.pill{display:inline-block;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--line-2);color:var(--ink-2)}
+.pill.hot{background:var(--hot-soft);color:var(--hot)}
+.pill.warm{background:var(--warm-soft);color:var(--warm)}
+.pill.cold{background:var(--cold-soft);color:var(--cold)}
+.pill.booked{background:var(--booked-soft);color:var(--booked)}
+.fu{font-size:13px}
+.fu.due{color:var(--hot);font-weight:700}
+.mini{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3);margin-top:4px}
+.mini .b{width:44px;height:4px;border-radius:9px;background:var(--line-2);overflow:hidden}
+.mini .b i{display:block;height:100%;background:var(--brass)}
+.qa{display:flex;gap:6px;justify-content:flex-end}
+.qa a{font-size:12.5px;font-weight:600;text-decoration:none;color:var(--pine);border:1px solid var(--line);padding:5px 8px;border-radius:var(--r-s);background:var(--surface)}
+.qa a:hover{border-color:var(--pine)}
+.list-empty{padding:48px 20px;text-align:center;color:var(--ink-2)}
+.list-empty strong{display:block;color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;font-weight:500;margin-bottom:4px}
+.count-line{padding:10px 16px;font-size:13px;color:var(--ink-3)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r-s);font-size:14px;font-weight:500;transition:.25s;z-index:50;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.ask-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.ask-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);padding:20px;max-width:380px;width:100%}
+.ask-box p{margin:0 0 16px;font-size:15px}
+.ask-btns{display:flex;gap:8px;justify-content:flex-end}
+.hidden{display:none!important}
+
+@media (max-width: 1100px){
+  .row{grid-template-columns:6px 1.3fr 1fr .9fr 100px}
+  .row .c-src{display:none}
+}
+@media (max-width: 900px){
+  .mtabs{display:flex}
+  .wrap{grid-template-columns:1fr;padding-top:12px}
+  #formPanel{position:static;max-height:none}
+  body[data-view="records"] #formPanel{display:none}
+  body[data-view="form"] #recPanel{display:none}
+  .top-in{padding:10px 16px}
+  .mtabs,.wrap,.banner{padding-left:16px;padding-right:16px}
+}
+@media (max-width: 620px){
+  .row{grid-template-columns:5px 1fr auto;gap:10px;padding-right:12px}
+  .row .c-proj,.row .c-src{display:none}
+  .row .c-stat{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .row .qa{grid-column:2/-1;justify-content:flex-start}
+  .row .edge{grid-row:span 2}
+  .tools{grid-template-columns:1fr 1fr}
+  .tools input{grid-column:1/-1}
+  .grid2{grid-template-columns:1fr}
+  .brand small{display:none}
+}
+</style>
+</head>
+<body data-view="form">
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <h1>Site Visit Register</h1>
+      <small>Shrungal Group sales office</small>
+    </div>
+    <span class="live" id="live"><i></i><span>Connecting</span></span>
+    <button class="btn ghost" id="exportBtn" type="button">Download Excel</button>
+    <button class="btn primary" id="newBtn" type="button">New visit</button>
+  </div>
+  <div class="mtabs" role="tablist">
+    <button role="tab" id="tabForm" aria-selected="true" type="button">Add visit</button>
+    <button role="tab" id="tabRec" aria-selected="false" type="button">Records <span id="tabCount" class="num"></span></button>
+  </div>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<main class="wrap">
+  <!-- FORM -->
+  <section class="panel" id="formPanel" aria-labelledby="formTitle">
+    <div class="panel-head">
+      <div>
+        <h2 id="formTitle">New site visit</h2>
+        <p id="formSub">Fill this while the visitor is on site.</p>
+      </div>
+      <button class="btn ghost hidden" id="cancelEdit" type="button">Close</button>
+    </div>
+
+    <form id="f" novalidate autocomplete="off">
+      <fieldset>
+        <legend>Visitor</legend>
+        <div class="grid2">
+          <label class="f full"><span>Full name <b>*</b></span><input type="text" name="name" required></label>
+          <label class="f"><span>Mobile <b>*</b></span><input type="tel" name="phone" inputmode="tel" required class="num"></label>
+          <label class="f"><span>Alternate mobile</span><input type="tel" name="altPhone" inputmode="tel" class="num"></label>
+          <div class="full" id="dupBox"></div>
+          <label class="f full"><span>Email</span><input type="email" name="email"></label>
+          <label class="f"><span>Lives in (area / city)</span><input type="text" name="area" list="dl-area"></label>
+          <label class="f"><span>Occupation</span>
+            <select name="occupation">
+              <option value="">Select</option><option>Salaried</option><option>Business owner</option><option>Professional (Dr / CA / Lawyer)</option>
+              <option>NRI</option><option>Retired</option><option>Other</option>
+            </select></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Visit</legend>
+        <div class="grid2">
+          <label class="f"><span>Visit date <b>*</b></span><input type="text" name="visitDate" required class="num" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10"></label>
+          <label class="f"><span>Lead source</span>
+            <select name="source">
+              <option value="">Select</option><option>Walk-in</option><option>Referral</option><option>Channel partner / broker</option>
+              <option>Existing customer</option><option>Website</option><option>Facebook / Instagram</option><option>Google ads</option>
+              <option>99acres / MagicBricks / Housing</option><option>Hoarding / banner</option><option>Newspaper</option><option>Exhibition</option><option>Other</option>
+            </select></label>
+          <label class="f hidden" id="srcDetailWrap"><span id="srcDetailLab">Partner name</span><input type="text" name="sourceDetail" list="dl-partner"></label>
+          <label class="f hidden" id="brokerPhoneWrap"><span>Broker mobile</span><input type="tel" name="brokerPhone" inputmode="tel" class="num"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Requirement</legend>
+        <div class="grid2">
+          <div class="f full"><span>Configuration</span>
+            <div class="chips" id="cfgChips"></div></div>
+          <label class="f"><span>Budget</span>
+            <select name="budget">
+              <option value="">Select</option><option>Under 40 L</option><option>40 to 50 L</option><option>50 to 60 L</option>
+              <option>60 to 70 L</option><option>70 to 80 L</option><option>80 to 90 L</option><option>90 L to 1 Cr</option><option>1 Cr and above</option>
+            </select></label>
+          <label class="f"><span>Planning to buy</span>
+            <select name="timeline">
+              <option value="">Select</option><option>Immediately</option><option>Within 3 months</option><option>3 to 6 months</option>
+              <option>6 months plus</option><option>Just exploring</option>
+            </select></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Lead category</legend>
+        <div class="score">
+          <div class="n num" id="scoreN">0</div>
+          <div style="flex:1">
+            <div class="bar"><i id="scoreBar"></i></div>
+            <div class="lab" id="scoreLab">Score builds from buying timeline, number of visits and concerns raised.</div>
+          </div>
+        </div>
+        <div class="temp" role="radiogroup" aria-label="Lead temperature">
+          <label class="t-hot"><input type="radio" name="temperature" value="Hot"><span><strong>Hot</strong><em>Likely to book soon</em></span></label>
+          <label class="t-warm"><input type="radio" name="temperature" value="Warm"><span><strong>Warm</strong><em>Interested, needs push</em></span></label>
+          <label class="t-cold"><input type="radio" name="temperature" value="Cold"><span><strong>Cold</strong><em>Low intent for now</em></span></label>
+        </div>
+        <div class="auto-note" id="autoNote">Set automatically from the score. Tap to override.</div>
+
+        <div class="grid2" style="margin-top:14px">
+          <label class="f"><span>Status</span>
+            <select name="status">
+              <option>New</option><option>Follow-up</option><option>Revisit planned</option><option>Negotiation</option><option>Booked</option><option>Lost</option>
+            </select></label>
+          <label class="f"><span>Next follow-up</span><input type="text" name="nextFollowUp" class="num" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10"></label>
+          <label class="f full hidden" id="lostWrap"><span>Lost reason</span>
+            <select name="lostReason">
+              <option value="">Select</option><option>Price too high</option><option>Bought elsewhere</option><option>Location</option>
+              <option>Loan not approved</option><option>Plan dropped</option><option>Not reachable</option><option>Other</option>
+            </select></label>
+          <div class="f full"><span>Concerns raised</span>
+            <div class="chips" id="objChips"></div></div>
+          <label class="f full"><span>Remarks</span><textarea name="remarks" placeholder="What they liked, which unit they saw, family feedback"></textarea></label>
+        </div>
+      </fieldset>
+
+      <fieldset id="logSet" class="hidden">
+        <legend>Follow-up log</legend>
+        <div class="log" id="log"></div>
+        <div class="note-add">
+          <input type="text" id="noteIn" placeholder="Called, said will visit Sunday with parents">
+          <button class="btn" type="button" id="noteBtn">Add note</button>
+        </div>
+        <div style="margin-top:10px"><button class="btn" type="button" id="revisitBtn">Log a revisit today</button></div>
+        <div class="meta" id="metaLine"></div>
+      </fieldset>
+
+      <div class="form-actions">
+        <button class="btn primary" type="submit" id="saveBtn">Save visit</button>
+        <button class="btn danger hidden" type="button" id="delBtn">Delete</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- RECORDS -->
+  <section class="panel" id="recPanel" aria-label="Visit records">
+    <div class="rec-head">
+      <div class="filters" id="filters"></div>
+      <div class="tools">
+        <input type="text" id="q" placeholder="Search name, mobile, area" aria-label="Search">
+        <select id="sortF" aria-label="Sort">
+          <option value="recent">Latest visit</option><option value="fu">Next follow-up</option><option value="score">Highest score</option>
+        </select>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="count-line num" id="countLine"></div>
+  </section>
+</main>
+
+<datalist id="dl-area"></datalist>
+<datalist id="dl-partner"></datalist>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ======================================================================
+   FIREBASE SETUP — fill this in with your own project's config.
+   Until you do, the app runs single-device only (data saved in this
+   browser). See the setup steps you were given for the other tracker —
+   same steps apply here.
+   ====================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDX4ydNoe_n2OpWAz3a0MEZnhrpay0WzPQ",
+  authDomain: "shrungal-crm.firebaseapp.com",
+  projectId: "shrungal-crm",
+  storageBucket: "shrungal-crm.firebasestorage.app",
+  messagingSenderId: "93228460084",
+  appId: "1:93228460084:web:c4baaeca2ac2467bbb4261"
+};
+/* ====================================================================== */
+
+(function(){
+  "use strict";
+  const CONFIGS=["1 BHK","2 BHK","3 BHK","4 BHK","Shop"];
+  const OBJECTIONS=["Price","Location","Size / layout","Amenities","Possession date","Loan","Vastu","Floor / view","Other"];
+  const $=s=>document.querySelector(s);
+  const f=$("#f");
+  let db=null, col=null, profilesCol=null, myId=null;
+  let records=[]; let editingId=null; let editingStamp=0; let dirty=false; let tempManual=false;
+  let filter="all"; let profileCache={};
+
+  /* ---------- local identity (no login system; just tells notes apart) ---------- */
+  function getLocalUser(){
+    const LK='svr_uid', NK='svr_uname';
+    let id, name;
+    try{
+      id=localStorage.getItem(LK); name=localStorage.getItem(NK);
+      if(!id){ id='u_'+Math.random().toString(36).slice(2,10); localStorage.setItem(LK,id); }
+      if(!name){ name=(prompt('Your name, shown on notes you add:','')||'').trim()||'Teammate'; localStorage.setItem(NK,name); }
+    }catch(e){ id=id||'u_anon'; name=name||'Teammate'; }
+    return {id,name};
+  }
+
+  /* ---------- helpers ---------- */
+  const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+  const digits=s=>String(s||"").replace(/\D/g,"").slice(-10);
+  const fmtDate=s=>{if(!s)return"";const [y,m,d]=s.split("-");return `${d}/${m}/${y}`};
+  const toIso=t=>{const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec((t||"").trim());if(!m)return"";const [_,d,mo,y]=m;const dt=new Date(+y,+mo-1,+d);if(dt.getFullYear()!==+y||dt.getMonth()!==+mo-1||dt.getDate()!==+d)return"";return `${y}-${mo}-${d}`};
+  const fmtTime=t=>{const d=new Date(t);return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"})+", "+d.toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"})};
+  function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2400)}
+  function ask(msg,okLabel){return new Promise(res=>{
+    const ov=document.createElement("div");ov.className="ask-ov";
+    ov.innerHTML=`<div class="ask-box" role="alertdialog" aria-modal="true"><p>${esc(msg)}</p><div class="ask-btns"><button type="button" class="btn" data-v="0">Cancel</button><button type="button" class="btn primary" data-v="1">${esc(okLabel||"OK")}</button></div></div>`;
+    document.body.appendChild(ov);
+    const kd=e=>{if(e.key==="Escape")done(false)};
+    const done=v=>{ov.remove();document.removeEventListener("keydown",kd);res(v)};
+    document.addEventListener("keydown",kd);
+    ov.addEventListener("click",e=>{const b=e.target.closest("button");if(b)done(b.dataset.v==="1");else if(e.target===ov)done(false)});
+    ov.querySelector('[data-v="0"]').focus();
+  })}
+  function setLive(state,text){const l=$("#live");l.className="live "+state;l.querySelector("span").textContent=text}
+  function banner(msg){$("#banner").innerHTML=msg?`<div>${esc(msg)}</div>`:""}
+
+  /* ---------- build chips ---------- */
+  function chipSet(el,name,items){el.innerHTML=items.map(v=>`<label><input type="checkbox" name="${name}" value="${esc(v)}"><span>${esc(v)}</span></label>`).join("")}
+  chipSet($("#cfgChips"),"config",CONFIGS);
+  chipSet($("#objChips"),"objections",OBJECTIONS);
+
+  /* ---------- form read / write ---------- */
+  function readForm(){
+    const fd=new FormData(f); const o={};
+    ["name","phone","altPhone","email","area","occupation","visitDate","source","sourceDetail","brokerPhone",
+     "budget","timeline","temperature","status","nextFollowUp","lostReason","remarks"].forEach(k=>{o[k]=(fd.get(k)||"").toString().trim()});
+    o.config=fd.getAll("config"); o.objections=fd.getAll("objections");
+    o.visitDate=toIso(o.visitDate); o.nextFollowUp=toIso(o.nextFollowUp);
+    if(!o.source||!/Referral|Channel|Existing/.test(o.source)) o.sourceDetail="";
+    if(!/Channel/.test(o.source)) o.brokerPhone="";
+    if(o.status!=="Lost") o.lostReason="";
+    o.score=calcScore(o);
+    return o;
+  }
+  function fillForm(r){
+    f.reset();
+    Object.entries(r).forEach(([k,v])=>{
+      const els=f.elements[k]; if(!els||v==null) return;
+      if(Array.isArray(v)){f.querySelectorAll(`input[name="${k}"]`).forEach(i=>i.checked=v.includes(i.value));return}
+      if(els instanceof RadioNodeList){[...els].forEach(i=>{ if(i.type==="radio"||i.type==="checkbox") i.checked=(i.value===v); else i.value=v; });}
+      else els.value=v;
+    });
+    f.elements.visitDate.value=fmtDate(r.visitDate); f.elements.nextFollowUp.value=fmtDate(r.nextFollowUp);
+    syncConditional(); updateScore();
+  }
+  function blankForm(){
+    f.reset(); f.elements.visitDate.value=fmtDate(today());
+    tempManual=false; syncConditional(); updateScore(); $("#dupBox").innerHTML="";
+  }
+
+  /* ---------- scoring ---------- */
+  function visitCount(){const r=editingId&&records.find(x=>x.id===editingId);return r?((r.visitDates||[r.visitDate]).filter(Boolean).length||1):1}
+  function calcScore(o){
+    let s=0;
+    s+={"Immediately":45,"Within 3 months":32,"3 to 6 months":18,"6 months plus":6,"Just exploring":0}[o.timeline]??0;
+    const v=visitCount(); s+=v>=3?35:v===2?25:10;
+    const c=(o.objections||[]).length; s+=c===0?20:c===1?10:0;
+    return Math.min(100,s);
+  }
+  const tempFor=s=>s>=65?"Hot":s>=40?"Warm":"Cold";
+  function updateScore(){
+    const o=readForm(); const s=o.score;
+    $("#scoreN").textContent=s; $("#scoreBar").style.width=s+"%";
+    const filled=o.timeline?1:0;
+    $("#scoreLab").textContent=filled?`Suggested: ${tempFor(s)}`:"Pick a buying timeline to score this lead";
+    if(!tempManual && filled>0){const t=tempFor(s); f.querySelectorAll('input[name="temperature"]').forEach(i=>i.checked=i.value===t)}
+    $("#autoNote").innerHTML=tempManual?`Set by you. <button type="button" id="reAuto">Go back to auto</button>`:"Set automatically from the score. Tap to override.";
+    const ra=$("#reAuto"); if(ra) ra.onclick=()=>{tempManual=false;updateScore()};
+  }
+  function syncConditional(){
+    const src=f.elements.source.value; const show=/Referral|Channel|Existing/.test(src);
+    $("#srcDetailWrap").classList.toggle("hidden",!show);
+    $("#srcDetailLab").textContent=/Channel/.test(src)?"Partner / broker name":"Referred by";
+    $("#brokerPhoneWrap").classList.toggle("hidden",!/Channel/.test(src));
+    $("#lostWrap").classList.toggle("hidden",f.elements.status.value!=="Lost");
+  }
+
+  f.addEventListener("input",e=>{
+    dirty=true;
+    if(e.target.name==="temperature") tempManual=true;
+    if(["source","status"].includes(e.target.name)) syncConditional();
+    if(e.target.name!=="temperature") updateScore();
+  });
+  f.addEventListener("change",e=>{ if(e.target.name==="temperature"){tempManual=true;updateScore()} });
+  f.elements.phone.addEventListener("blur",checkDup);
+  ["visitDate","nextFollowUp"].forEach(n=>f.elements[n].addEventListener("input",e=>{
+    let v=e.target.value.replace(/\D/g,"").slice(0,8);
+    if(v.length>4) v=v.slice(0,2)+"/"+v.slice(2,4)+"/"+v.slice(4);
+    else if(v.length>2) v=v.slice(0,2)+"/"+v.slice(2);
+    e.target.value=v;
+  }));
+
+  function checkDup(){
+    const p=digits(f.elements.phone.value); const box=$("#dupBox");
+    if(p.length<10){box.innerHTML="";return}
+    const hit=records.find(r=>r.id!==editingId && (digits(r.phone)===p||digits(r.altPhone)===p));
+    if(!hit){box.innerHTML="";return}
+    box.innerHTML=`<div class="dup"><span>${esc(hit.name)} already visited on ${esc(fmtDate(hit.visitDate))}.</span><button type="button">Open that record</button></div>`;
+    box.querySelector("button").onclick=()=>openRecord(hit.id);
+  }
+
+  /* ---------- edit mode ---------- */
+  function setMode(id){
+    editingId=id; const r=id&&records.find(x=>x.id===id);
+    $("#formTitle").textContent=r?r.name:"New site visit";
+    $("#formSub").textContent=r?(r.visitDate?"Visited "+fmtDate(r.visitDate):""):"Fill this while the visitor is on site.";
+    $("#saveBtn").textContent=r?"Save changes":"Save visit";
+    $("#cancelEdit").classList.toggle("hidden",!r);
+    $("#delBtn").classList.toggle("hidden",!r);
+    $("#logSet").classList.toggle("hidden",!r);
+    renderList();
+  }
+  async function openRecord(id){
+    const r=records.find(x=>x.id===id); if(!r) return;
+    if(dirty && editingId!==id && !(await ask("Discard unsaved changes in the form?","Discard"))) return;
+    fillForm(r); tempManual=!!r.tempManual; updateScore();
+    editingStamp=r.updatedAt||0; dirty=false; setMode(id); renderLog(r); $("#dupBox").innerHTML="";
+    view("form"); $("#formPanel").scrollTop=0;
+    if(window.innerWidth<=900) window.scrollTo({top:0});
+  }
+  async function closeEdit(){
+    if(dirty && !(await ask("Discard unsaved changes?","Discard"))) return;
+    blankForm(); dirty=false; setMode(null);
+  }
+  $("#cancelEdit").onclick=closeEdit;
+  $("#newBtn").onclick=async()=>{ if(editingId||dirty) await closeEdit(); else blankForm(); view("form"); f.elements.name.focus(); };
+
+  async function renderLog(r){
+    const notes=(r.notes||[]).slice().sort((a,b)=>b.t-a.t);
+    const ids=[...new Set(notes.map(n=>n.by).concat([r.createdBy,r.updatedBy]).filter(Boolean))];
+    await resolveNames(ids);
+    $("#log").innerHTML=notes.length?notes.map(n=>`<div class="item"><small>${esc(fmtTime(n.t))}${n.by?", "+esc(nameOf(n.by)):""}</small>${esc(n.text)}</div>`).join(""):`<div class="empty">No follow-up notes yet.</div>`;
+    const visits=(r.visitDates||[r.visitDate]).filter(Boolean);
+    $("#metaLine").textContent=`${visits.length} site visit${visits.length===1?"":"s"}. Added ${r.createdAt?fmtTime(r.createdAt):""}${r.createdBy?" by "+nameOf(r.createdBy):""}. Last updated ${r.updatedAt?fmtTime(r.updatedAt):""}${r.updatedBy?" by "+nameOf(r.updatedBy):""}.`;
+  }
+
+  /* ---------- names (stored in a small "profiles" collection, one doc per device/browser) ---------- */
+  async function resolveNames(ids){
+    const need=ids.filter(i=>!(i in profileCache)); if(!need.length||!profilesCol) return;
+    try{
+      await Promise.all(need.map(async id=>{
+        const snap=await profilesCol.doc(id).get();
+        profileCache[id]=snap.exists?(snap.data().name||""):"";
+      }));
+    }catch(e){}
+  }
+  const nameOf=id=>id===myId?"you":(profileCache[id]||"a teammate");
+
+  /* ---------- save ---------- */
+  f.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const o=readForm();
+    if(!o.name){toast("Add the visitor's name");f.elements.name.focus();return}
+    if(digits(o.phone).length<10){toast("Add a 10 digit mobile number");f.elements.phone.focus();return}
+    if(!o.visitDate){toast("Enter the visit date as DD/MM/YYYY");f.elements.visitDate.focus();return}
+    if(f.elements.nextFollowUp.value.trim()&&!o.nextFollowUp){toast("Enter the follow-up date as DD/MM/YYYY");f.elements.nextFollowUp.focus();return}
+    if(!col){toast("Live sync is not connected, so this can't be saved yet");return}
+    const btn=$("#saveBtn"); btn.disabled=true;
+    const now=Date.now(); o.tempManual=tempManual; o.updatedAt=now; o.updatedBy=myId;
+    try{
+      if(editingId){
+        const cur=records.find(r=>r.id===editingId)||{};
+        const vd=new Set(cur.visitDates||[cur.visitDate].filter(Boolean)); if(o.visitDate) vd.add(o.visitDate);
+        o.visitDates=[...vd].sort();
+        await col.doc(editingId).update(o);
+        editingStamp=now; dirty=false; toast("Changes saved");
+        banner("");
+      }else{
+        o.createdAt=now; o.createdBy=myId; o.notes=[]; o.visitDates=[o.visitDate];
+        await col.doc().set(o);
+        toast(`${o.name} saved`); blankForm(); dirty=false; setMode(null);
+      }
+    }catch(err){ handleWriteErr(err) }
+    finally{ btn.disabled=false }
+  });
+  function handleWriteErr(err){
+    console.error(err);
+    toast("Couldn't save. Check your connection and Firestore rules, then try again.");
+  }
+
+  $("#delBtn").onclick=async()=>{
+    const r=records.find(x=>x.id===editingId); if(!r) return;
+    if(!(await ask(`Delete ${r.name}'s record for good?`,"Delete"))) return;
+    try{await col.doc(editingId).delete(); dirty=false; blankForm(); setMode(null); toast("Record deleted")}catch(err){handleWriteErr(err)}
+  };
+
+  async function addNote(text){
+    const r=records.find(x=>x.id===editingId); if(!r||!text) return;
+    const notes=(r.notes||[]).concat([{t:Date.now(),by:myId,text}]);
+    try{await col.doc(editingId).update({notes,updatedAt:Date.now(),updatedBy:myId}); toast("Note added")}catch(err){handleWriteErr(err)}
+  }
+  $("#noteBtn").onclick=async()=>{const i=$("#noteIn");const t=i.value.trim();if(!t)return;$("#noteBtn").disabled=true;await addNote(t);i.value="";$("#noteBtn").disabled=false};
+  $("#noteIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#noteBtn").click()}});
+  $("#revisitBtn").onclick=async()=>{
+    const r=records.find(x=>x.id===editingId); if(!r) return;
+    const t=today(); const vd=new Set(r.visitDates||[r.visitDate].filter(Boolean)); vd.add(t);
+    const notes=(r.notes||[]).concat([{t:Date.now(),by:myId,text:"Revisited site"}]);
+    const patch={visitDates:[...vd].sort(),visitDate:t,notes,updatedAt:Date.now(),updatedBy:myId};
+    if(r.status==="New"||r.status==="Revisit planned") patch.status="Follow-up";
+    { const tl={"Immediately":45,"Within 3 months":32,"3 to 6 months":18,"6 months plus":6,"Just exploring":0}[r.timeline]??0;
+      const v=patch.visitDates.length; const c=(r.objections||[]).length;
+      patch.score=Math.min(100,tl+(v>=3?35:v===2?25:10)+(c===0?20:c===1?10:0));
+      if(!r.tempManual && r.timeline) patch.temperature=tempFor(patch.score); }
+    try{await col.doc(editingId).update(patch); const x=records.find(y=>y.id===editingId); if(x&&!dirty){Object.assign(x,patch);fillForm(x);tempManual=!!x.tempManual;updateScore();editingStamp=patch.updatedAt} toast("Revisit logged")}catch(err){handleWriteErr(err)}
+  };
+
+  /* ---------- list ---------- */
+  function isDue(r){return r.nextFollowUp && r.nextFollowUp<=today() && !["Booked","Lost"].includes(r.status)}
+  const FILTERS=[
+    {k:"all",l:"All",fn:()=>true},
+    {k:"Hot",l:"Hot",c:"var(--hot)",fn:r=>r.temperature==="Hot"&&!["Booked","Lost"].includes(r.status)},
+    {k:"Warm",l:"Warm",c:"var(--warm)",fn:r=>r.temperature==="Warm"&&!["Booked","Lost"].includes(r.status)},
+    {k:"Cold",l:"Cold",c:"var(--cold)",fn:r=>r.temperature==="Cold"&&!["Booked","Lost"].includes(r.status)},
+    {k:"due",l:"Follow-up due",fn:isDue},
+    {k:"today",l:"Visited today",fn:r=>(r.visitDates||[r.visitDate]).includes(today())},
+    {k:"Booked",l:"Booked",c:"var(--booked)",fn:r=>r.status==="Booked"},
+    {k:"Lost",l:"Lost",fn:r=>r.status==="Lost"},
+  ];
+  function renderFilters(){
+    $("#filters").innerHTML=FILTERS.map(x=>{
+      const n=records.filter(x.fn).length;
+      return `<button type="button" data-k="${x.k}" aria-pressed="${filter===x.k}">${x.c?`<span class="dot" style="background:${x.c}"></span>`:""}${esc(x.l)} <b class="num">${n}</b></button>`}).join("");
+    $("#filters").querySelectorAll("button").forEach(b=>b.onclick=()=>{filter=b.dataset.k;renderFilters();renderList()});
+    $("#tabCount").textContent=records.length?`(${records.length})`:"";
+  }
+  function renderList(){
+    const q=$("#q").value.trim().toLowerCase(); const qd=digits(q); const sort=$("#sortF").value;
+    const fx=FILTERS.find(x=>x.k===filter).fn;
+    let rows=records.filter(r=>fx(r) && (!q ||
+      [r.name,r.area,r.sourceDetail].some(v=>(v||"").toLowerCase().includes(q)) || (qd.length>=3&&(digits(r.phone).includes(qd)||digits(r.altPhone).includes(qd)))));
+    if(sort==="fu") rows.sort((a,b)=>(a.nextFollowUp||"9999").localeCompare(b.nextFollowUp||"9999"));
+    else if(sort==="score") rows.sort((a,b)=>(b.score||0)-(a.score||0));
+    else rows.sort((a,b)=>(b.visitDate||"").localeCompare(a.visitDate||"")||(b.createdAt||0)-(a.createdAt||0));
+    const list=$("#list");
+    if(!records.length){list.innerHTML=`<div class="list-empty"><strong>No visits recorded yet</strong>Add the first visitor using the form. It will show up here for everyone instantly.</div>`;$("#countLine").textContent="";return}
+    if(!rows.length){list.innerHTML=`<div class="list-empty"><strong>Nothing matches</strong>Clear the search or pick another filter.</div>`;$("#countLine").textContent="";return}
+    list.innerHTML=rows.map(r=>{
+      const tc=(r.temperature||"").toLowerCase(); const edge=r.status==="Booked"?"var(--booked)":r.status==="Lost"?"var(--line)":tc?`var(--${tc})`:"var(--line)";
+      const nv=(r.visitDates||[r.visitDate]).filter(Boolean).length; const ph=digits(r.phone);
+      const statPill=r.status==="Booked"?`<span class="pill booked">Booked</span>`:r.status==="Lost"?`<span class="pill">Lost</span>`:`<span class="pill ${tc}">${esc(r.temperature||"Unrated")}</span>`;
+      return `<div class="row${r.id===editingId?" sel":""}" data-id="${esc(r.id)}" tabindex="0" role="button" aria-label="Open ${esc(r.name)}">
+        <span class="edge" style="background:${edge}"></span>
+        <div class="who"><strong>${esc(r.name)}</strong><a class="num" href="tel:+91${ph}" data-stop>${esc(r.phone)}</a>
+          <div class="mini"><span class="b"><i style="width:${r.score||0}%"></i></span><span class="num">${r.score||0}</span>${nv>1?` <span>${nv} visits</span>`:""}</div></div>
+        <div class="c2 c-proj"><strong>${esc((r.config||[]).join(", ")||"No config")}</strong>${esc(r.budget||"")}</div>
+        <div class="c2 c-src"><strong>${esc(r.source||"No source")}</strong>${esc(r.sourceDetail||"")}${r.brokerPhone?" · "+esc(r.brokerPhone):""}</div>
+        <div class="c-stat">${statPill}<div class="fu num ${isDue(r)?"due":""}" style="margin-top:4px">${r.status!=="Booked"&&r.status!=="Lost"&&r.nextFollowUp?(isDue(r)?"Due ":"Next ")+esc(fmtDate(r.nextFollowUp)):esc(r.status||"")}</div></div>
+        <div class="qa"><a href="tel:+91${ph}" data-stop>Call</a><a href="https://wa.me/91${ph}" target="_blank" rel="noopener" data-stop>WhatsApp</a></div>
+      </div>`}).join("");
+    list.querySelectorAll(".row").forEach(el=>{
+      el.onclick=e=>{ if(e.target.closest("[data-stop]")) return; openRecord(el.dataset.id) };
+      el.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();openRecord(el.dataset.id)} };
+    });
+    $("#countLine").textContent=`Showing ${rows.length} of ${records.length}`;
+  }
+  $("#q").addEventListener("input",renderList); $("#sortF").addEventListener("change",renderList);
+
+  function renderDatalists(){
+    const uniq=k=>[...new Set(records.map(r=>r[k]).filter(Boolean))].sort();
+    const fill=(id,arr)=>{$(id).innerHTML=arr.map(v=>`<option value="${esc(v)}">`).join("")};
+    fill("#dl-area",uniq("area")); fill("#dl-partner",uniq("sourceDetail"));
+  }
+
+  /* ---------- mobile view switch ---------- */
+  function view(v){document.body.dataset.view=v;$("#tabForm").setAttribute("aria-selected",v==="form");$("#tabRec").setAttribute("aria-selected",v==="records")}
+  $("#tabForm").onclick=()=>view("form"); $("#tabRec").onclick=()=>view("records");
+
+  /* ---------- export to a real .xlsx workbook (plain browser download — works anywhere) ---------- */
+  $("#exportBtn").onclick=()=>{
+    if(!records.length){toast("No records to export yet");return}
+    const cols=[["Visit date","visitDate"],["All visit dates",r=>(r.visitDates||[]).join(" | ")],["Name","name"],["Mobile","phone"],["Alt mobile","altPhone"],["Email","email"],["Area","area"],["Occupation","occupation"],
+      ["Source","source"],["Source detail","sourceDetail"],["Broker mobile","brokerPhone"],
+      ["Configuration",r=>(r.config||[]).join(", ")],["Budget","budget"],["Timeline","timeline"],
+      ["Score","score"],["Temperature","temperature"],["Status","status"],["Lost reason","lostReason"],["Concerns",r=>(r.objections||[]).join(", ")],["Next follow-up","nextFollowUp"],["Remarks","remarks"],
+      ["Notes",r=>(r.notes||[]).map(n=>fmtTime(n.t)+": "+n.text).join(" | ")]];
+    const headers=cols.map(c=>c[0]);
+    const rows=records.map(r=>cols.map(([_,k])=>typeof k==="function"?k(r):(r[k]==null?"":r[k])));
+    try{
+      const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+      ws['!cols']=headers.map((h,i)=>({wch:Math.max(h.length,...rows.map(row=>String(row[i]||"").length))+2}));
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,"Site Visits");
+      const wbout=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+      const blob=new Blob([wbout],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url; a.download=`site-visits-${today()}.xlsx`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }catch(e){ console.error(e); toast("Could not prepare the Excel file"); }
+  };
+
+  /* ---------- live sync ---------- */
+  function onData(snap){
+    records=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
+    setLive("on","Live");
+    renderFilters(); renderDatalists(); renderList();
+    if(editingId){
+      const r=records.find(x=>x.id===editingId);
+      if(!r){ banner("This record was deleted by someone else."); dirty=false; blankForm(); setMode(null); return }
+      renderLog(r);
+      if((r.updatedAt||0)>editingStamp && r.updatedBy!==myId){
+        if(!dirty){ fillForm(r); tempManual=!!r.tempManual; updateScore(); editingStamp=r.updatedAt; toast(`Updated by ${nameOf(r.updatedBy)}`) }
+        else banner("Someone else just updated this record. Saving now will overwrite their change.");
+      }
+    }
+  }
+
+  blankForm(); setMode(null); renderFilters(); renderList();
+
+  const me=getLocalUser(); myId=me.id; profileCache[myId]=me.name;
+
+  function init(){
+    const configured=firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("PASTE_");
+    if(!configured || !window.firebase){
+      setLive("off","Offline");
+      banner("Add your Firebase config at the top of this file to enable live sync across devices. Until then, entries save on this device only.");
+      return;
+    }
+    try{
+      firebase.initializeApp(firebaseConfig);
+      db=firebase.firestore();
+      col=db.collection("visits");
+      profilesCol=db.collection("profiles");
+      profilesCol.doc(myId).set({name:me.name},{merge:true}).catch(()=>{});
+
+      const subscribe=()=>col.orderBy("createdAt","desc").limit(1000).onSnapshot(onData,err=>{
+        console.error(err);
+        setLive("off","Disconnected");
+        banner("Could not reach the shared database — check your Firebase config and Firestore security rules.");
+        setTimeout(subscribe,4000);
+      });
+      subscribe();
+    }catch(e){
+      console.error(e);
+      setLive("off","Offline");
+      banner("Could not connect to Firebase. Check your config values.");
+    }
+  }
+  init();
+
+  window.addEventListener("beforeunload",e=>{ if(dirty){e.preventDefault();e.returnValue=""} });
+})();
+</script>
+</body>
+</html>
